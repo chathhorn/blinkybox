@@ -72,6 +72,8 @@ static void buzz_off(void);
 
 static void button_pressed(void);
 static void check_plugged(void);
+static void write_keys(void);
+static void read_keys(void);
 
 static inline bool in_range(int x, int key) {
       return (((key > 1000) || x <= (key + 15)) && ((key < 15) || x >= (key - 15)));
@@ -280,8 +282,11 @@ void setup(void) {
 }
 
 // State:
-// DORMANT   <-> ACTIVE -> SOLVED -> RESET
-// CALIBRATE  ->
+// DORMANT <--.
+//             \
+//              -> ACTIVE -> SOLVED -> RESET
+//             /
+// CALIBRATE -'
 void loop(void) {
       switch (state) {
             // Calibration mode.
