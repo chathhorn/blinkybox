@@ -53,6 +53,7 @@ enum {
       SOLVED,
       RESET,
       CALIBRATE,
+      CALIBRATE_DONE,
 };
 
 volatile static int state = DORMANT;
@@ -195,9 +196,11 @@ static void check_plugged(void) {
 }
 
 static void button_pressed(void) {
+      if (!plugged) return;
+
       if (state == CALIBRATE) {
             write_keys();
-            state = DORMANT;
+            state = CALIBRATE_DONE;
 
 #ifndef NDEBUG
             serial_puts("ISR: BUTTON PRESSED (CALIBRATION)");
@@ -209,8 +212,6 @@ static void button_pressed(void) {
       }
 
       if (state != ACTIVE) return;
-
-      if (!plugged) return;
 
       int pot1 = analogRead(POT1);
       int pot2 = analogRead(POT2);
@@ -260,7 +261,7 @@ void setup(void) {
       digitalWrite(RELAY, HIGH);
       digitalWrite(VIB, HIGH);
 
-      if (digitalRead(BUTTON) == LOW && !switch_flipped()) {
+      if (digitalRead(BUTTON) == LOW) {
             state = CALIBRATE;
       } else {
             state = DORMANT;
@@ -282,19 +283,25 @@ void setup(void) {
 }
 
 // State:
-// DORMANT <--.
-//             \
-//              -> ACTIVE -> SOLVED -> RESET
-//             /
-// CALIBRATE -'
+// DORMANT <-> ACTIVE -> SOLVED -> RESET
+// CALIBRATE -> CALIBRATE_DONE
 void loop(void) {
       switch (state) {
             // Calibration mode.
             case CALIBRATE: ;
 
-                  if (switch_flipped()) {
-                        state = ACTIVE;
-                  }
+                  check_plugged();
+                  leds_on();
+
+                  return;
+
+            // Calibration mode finished.
+            case CALIBRATE_DONE: ;
+
+                  leds_off();
+                  delay(150);
+                  leds_on();
+                  delay(150);
 
                   return;
 
